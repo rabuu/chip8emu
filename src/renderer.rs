@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use minifb::{Window, WindowOptions};
 
 const ROWS: usize = 32;
@@ -63,5 +65,29 @@ impl Renderer {
         self.window
             .update_with_buffer(&buf, self.width, self.height)
             .unwrap();
+    }
+}
+
+pub struct TimeStep {
+    last: Instant,
+    delta: f32,
+}
+
+impl TimeStep {
+    pub fn new() -> Self {
+        Self {
+            last: Instant::now(),
+            delta: 0.,
+        }
+    }
+
+    pub fn delta(&mut self) -> f32 {
+        let now = Instant::now();
+        let delta = now.duration_since(self.last).as_micros() as f32 * 0.001;
+
+        self.last = now;
+        self.delta = delta;
+
+        delta
     }
 }

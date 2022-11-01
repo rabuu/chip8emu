@@ -1,4 +1,6 @@
-use renderer::Renderer;
+use minifb::Key;
+
+use renderer::{Renderer, TimeStep};
 
 mod renderer;
 
@@ -10,5 +12,19 @@ fn main() {
 
     renderer.render();
 
-    loop {}
+    let mut timestep = TimeStep::new();
+    let mut dt = 0.;
+    const MS_PER_UPDATE: f32 = 16.6666667; // ~60Hz
+
+    while renderer.window.is_open() && !renderer.window.is_key_down(Key::Escape) {
+        dt += timestep.delta();
+
+        while dt >= MS_PER_UPDATE {
+            // CPU CYCLE
+
+            dt -= MS_PER_UPDATE;
+        }
+
+        renderer.window.update();
+    }
 }
