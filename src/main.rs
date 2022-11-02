@@ -2,6 +2,7 @@ use minifb::Key;
 
 use renderer::{Renderer, TimeStep};
 
+mod keyboard;
 mod renderer;
 
 fn main() {
