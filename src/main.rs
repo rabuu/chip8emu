@@ -6,6 +6,7 @@ use renderer::{Renderer, TimeStep};
 
 mod keyboard;
 mod renderer;
+mod speaker;
 
 fn main() {
     let mut renderer = Renderer::new(10);
