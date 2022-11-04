@@ -30,7 +30,7 @@ impl Chip {
         Self {
             renderer: Renderer::new(10),
             keyboard: Keyboard::new(),
-            speaker: Speaker::new(660., 0.7),
+            speaker: Speaker::new(440., 0.3),
             memory: Box::new([0; 4096]),
             v: [0; 16],
             i: 0,
@@ -70,7 +70,8 @@ impl Chip {
         // execute instructions
         for _ in 0..self.speed {
             if !self.paused {
-                let opcode = self.memory[self.pc as usize] << 8 | self.memory[self.pc as usize + 1];
+                let opcode = (self.memory[self.pc as usize] as u16) << 8
+                    | self.memory[self.pc as usize + 1] as u16;
                 // TODO: Implement instructions
             }
         }

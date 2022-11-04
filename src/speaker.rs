@@ -13,6 +13,7 @@ impl Speaker {
 
         let source = SineWave::new(freq).amplify(amplify);
         sink.append(source);
+        sink.pause();
 
         Self {
             sink,

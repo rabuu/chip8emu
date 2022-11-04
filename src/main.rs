@@ -26,6 +26,7 @@ fn main() {
 
         while dt >= MS_PER_UPDATE {
             // CPU CYCLE
+            chip.cycle();
 
             dt -= MS_PER_UPDATE;
         }
