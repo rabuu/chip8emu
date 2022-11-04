@@ -104,16 +104,16 @@ impl Chip {
 
     /// Jump to location `nnn`
     fn jp(&mut self, opcode: u16) {
-        let addr = opcode & 0xfff;
-        self.pc = addr;
+        let nnn = opcode & 0xfff;
+        self.pc = nnn;
     }
 
     /// Call subroutine at `nnn`
     fn call(&mut self, opcode: u16) {
         self.stack.push(self.pc);
 
-        let addr = opcode & 0xfff;
-        self.pc = addr;
+        let nnn = opcode & 0xfff;
+        self.pc = nnn;
     }
 
     /// Skip next instruction if `Vx` == `kk`
@@ -247,5 +247,38 @@ impl Chip {
 
         self.v[0xf] = if self.v[x as usize] >> 7 == 1 { 1 } else { 0 };
         self.v[x as usize] *= 2;
+    }
+
+    /// Skip next instruction if `Vx` != `Vy`
+    fn sne_vv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        if self.v[x as usize] != self.v[y as usize] {
+            self.pc += 2;
+        }
+    }
+
+    /// Set `I` = `nnn`
+    fn ld_i(&mut self, opcode: u16) {
+        let nnn = opcode & 0xfff;
+
+        self.i = nnn;
+    }
+
+    /// Jump to location `nnn` + `V0`
+    fn jp_v0(&mut self, opcode: u16) {
+        let nnn = opcode & 0xfff;
+
+        self.pc = nnn + self.v[0] as u16;
+    }
+
+    /// Set `Vx` = random byte AND `kk`
+    fn rnd(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let kk = (opcode & 0xff) as u8;
+        let r: u8 = rand::random();
+
+        self.v[x as usize] = r & kk;
     }
 }
