@@ -281,4 +281,63 @@ impl Chip {
 
         self.v[x as usize] = r & kk;
     }
+
+    /// Display `n`-byte sprite starting at memory location `I` at (`Vx`, `Vy`), set `VF` = collision
+    fn drw(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+        let n = (opcode & 0xf) as u8;
+
+        for (row, &(mut sprite)) in self
+            .memory
+            .iter()
+            .skip(self.i as usize - 1)
+            .take(n as usize)
+            .enumerate()
+        {
+            for col in 0..8 {
+                if sprite & 0x80 != 0 {
+                    if self
+                        .renderer
+                        .xor_pixel(self.v[x as usize] + col, self.v[y as usize] + row as u8)
+                    {
+                        self.v[0xf] = 1;
+                    } else {
+                        self.v[0xf] = 0;
+                    }
+                }
+
+                sprite <<= 1;
+            }
+        }
+    }
+
+    /// Skip next instruction if key with the value of `Vx` is pressed
+    fn skp(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        let key_code = self.v[x as usize];
+
+        if self.keyboard.is_key_pressed(key_code) {
+            self.pc += 2;
+        }
+    }
+
+    /// Skip next instruction if key with the value of `Vx` is not pressed
+    fn sknp(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        let key_code = self.v[x as usize];
+
+        if !self.keyboard.is_key_pressed(key_code) {
+            self.pc += 2;
+        }
+    }
+
+    /// Set `Vx` = *delay timer* value
+    fn ld_dt(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.v[x as usize] = self.delay_timer;
+    }
 }

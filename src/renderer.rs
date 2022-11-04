@@ -2,15 +2,15 @@ use std::time::Instant;
 
 use minifb::{Window, WindowOptions};
 
-const ROWS: usize = 32;
-const COLS: usize = 64;
+const ROWS: u8 = 32;
+const COLS: u8 = 64;
 
 const ON: u32 = 0x000000;
 const OFF: u32 = 0xFFFFFF;
 
 pub struct Renderer {
     scale: usize,
-    display: Box<[bool; ROWS * COLS]>,
+    display: Box<[bool; ROWS as usize * COLS as usize]>,
     width: usize,
     height: usize,
     pub window: Window,
@@ -18,30 +18,30 @@ pub struct Renderer {
 
 impl Renderer {
     pub fn new(scale: usize) -> Self {
-        let width = COLS * scale;
-        let height = ROWS * scale;
+        let width = COLS as usize * scale;
+        let height = ROWS as usize * scale;
 
         let window = Window::new("CHIP8EMU", width, height, WindowOptions::default())
             .unwrap_or_else(|e| panic!("{e}"));
 
         Self {
             scale,
-            display: Box::new([false; ROWS * COLS]),
+            display: Box::new([false; ROWS as usize * COLS as usize]),
             width,
             height,
             window,
         }
     }
 
-    pub fn set_pixel(&mut self, x: usize, y: usize) -> bool {
+    pub fn xor_pixel(&mut self, x: u8, y: u8) -> bool {
         let px = (y % ROWS) * COLS + (x % COLS);
-        self.display[px] ^= true;
+        self.display[px as usize] ^= true;
 
-        !self.display[px]
+        !self.display[px as usize]
     }
 
     pub fn clear(&mut self) {
-        self.display = Box::new([false; ROWS * COLS]);
+        self.display = Box::new([false; ROWS as usize * COLS as usize]);
     }
 
     pub fn render(&mut self) {
@@ -52,7 +52,7 @@ impl Renderer {
 
             for w in 0..self.width {
                 let x = w / self.scale;
-                let px = y * COLS + x;
+                let px = y * COLS as usize + x;
 
                 if self.display[px] {
                     buf.push(ON);
