@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use minifb::Key;
 
 use renderer::{Renderer, TimeStep};
@@ -13,9 +15,11 @@ fn main() {
 
     renderer.render();
 
+    const HERTZ: f32 = 60.;
+    const MS_PER_UPDATE: f32 = (1. / HERTZ) * 1000.;
+
     let mut timestep = TimeStep::new();
     let mut dt = 0.;
-    const MS_PER_UPDATE: f32 = 16.6666667; // ~60Hz
 
     while renderer.window.is_open() && !renderer.window.is_key_down(Key::Escape) {
         dt += timestep.delta();
