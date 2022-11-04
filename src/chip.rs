@@ -17,9 +17,8 @@ pub struct Chip {
     sound_timer: u8,
 
     pc: u16,
-    sp: u8,
 
-    stack: [u16; 16],
+    stack: Vec<u16>,
 
     paused: bool,
     speed: u32, // how many instructions are evaluated every cycle
@@ -37,8 +36,7 @@ impl Chip {
             delay_timer: 0,
             sound_timer: 0,
             pc: 0x200, // start of most Chip-8 programs
-            sp: 0,
-            stack: [0; 16],
+            stack: Vec::new(),
             paused: false,
             speed,
         }
@@ -70,7 +68,7 @@ impl Chip {
         // execute instructions
         for _ in 0..self.speed {
             if !self.paused {
-                let opcode = (self.memory[self.pc as usize] as u16) << 8
+                let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8
                     | self.memory[self.pc as usize + 1] as u16;
                 // TODO: Implement instructions
             }
@@ -92,5 +90,162 @@ impl Chip {
         } else {
             self.speaker.stop();
         }
+    }
+
+    /// Clear the display
+    fn cls(&mut self) {
+        self.renderer.clear();
+    }
+
+    /// Return from a subroutine
+    fn ret(&mut self) {
+        self.pc = self.stack.pop().unwrap_or(0);
+    }
+
+    /// Jump to location `nnn`
+    fn jp(&mut self, opcode: u16) {
+        let addr = opcode & 0xfff;
+        self.pc = addr;
+    }
+
+    /// Call subroutine at `nnn`
+    fn call(&mut self, opcode: u16) {
+        self.stack.push(self.pc);
+
+        let addr = opcode & 0xfff;
+        self.pc = addr;
+    }
+
+    /// Skip next instruction if `Vx` == `kk`
+    fn se_vb(&mut self, opcode: u16) {
+        let x = opcode & 0xf;
+        let kk = (opcode & 0xff) as u8;
+
+        if self.v[x as usize] == kk {
+            self.pc += 2;
+        }
+    }
+
+    /// Skip next instruction if `Vx` != `kk`
+    fn sne_vb(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let kk = (opcode & 0xff) as u8;
+
+        if self.v[x as usize] != kk {
+            self.pc += 2;
+        }
+    }
+
+    /// Skip next instruction if `Vx` == `Vy`
+    fn se_vv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        if self.v[x as usize] == self.v[y as usize] {
+            self.pc += 2;
+        }
+    }
+
+    /// Set `Vx` = `kk`
+    fn ld_vb(&mut self, opcode: u16) {
+        let x = opcode & 0xf;
+        let kk = (opcode & 0xff) as u8;
+
+        self.v[x as usize] = kk;
+    }
+
+    /// Set `Vx` = `Vx` + `kk`
+    fn add_vb(&mut self, opcode: u16) {
+        let x = opcode & 0xf;
+        let kk = (opcode & 0xff) as u8;
+
+        self.v[x as usize] += kk;
+    }
+
+    /// Set `Vx` = `Vy`
+    fn ld_vv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[x as usize] = self.v[y as usize];
+    }
+
+    /// Set `Vx` = `Vx` OR `Vy`
+    fn or(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[x as usize] |= self.v[y as usize];
+    }
+
+    /// Set `Vx` = `Vx` AND `Vy`
+    fn and(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[x as usize] &= self.v[y as usize];
+    }
+
+    /// Set `Vx` = `Vx` xor `Vy`
+    fn xor(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[x as usize] ^= self.v[y as usize];
+    }
+
+    /// Set `Vx` = `Vx` + `Vy`, set `VF` = carry
+    fn add_vv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        let res = self.v[x as usize] as u16 + self.v[y as usize] as u16;
+
+        self.v[0xf] = if res > 0xff { 1 } else { 0 };
+        self.v[x as usize] = (res & 0xff) as u8;
+    }
+
+    /// Set `Vx` = `Vx - Vy`, set `VF` = NOT borrow
+    fn sub(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[0xf] = if self.v[x as usize] > self.v[y as usize] {
+            1
+        } else {
+            0
+        };
+
+        self.v[x as usize] -= self.v[y as usize];
+    }
+
+    /// Set `Vx` = `Vx` SHR 1
+    fn shr(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.v[0xf] = if self.v[x as usize] & 1 == 1 { 1 } else { 0 };
+        self.v[x as usize] /= 2;
+    }
+
+    /// Set `Vx` = `Vy - Vx`, set `VF` = NOT borrow
+    fn subn(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+        let y = ((opcode & 0x00f0) >> 4) as u8;
+
+        self.v[0xf] = if self.v[y as usize] > self.v[x as usize] {
+            1
+        } else {
+            0
+        };
+
+        self.v[x as usize] = self.v[y as usize] - self.v[x as usize];
+    }
+
+    /// Set `Vx` = `Vx` SHL 1
+    fn shl(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.v[0xf] = if self.v[x as usize] >> 7 == 1 { 1 } else { 0 };
+        self.v[x as usize] *= 2;
     }
 }
