@@ -39,7 +39,10 @@ impl Keyboard {
     }
 
     pub fn on_key_down(&mut self, key: Key) {
-        let key_code = KEYMAP[&(key as u8)];
+        let Some(&key_code) = KEYMAP.get(&(key as u8)) else {
+            return;
+        };
+
         self.keys_pressed[key_code as usize] = true;
 
         // TODO: next key press stuff missing
