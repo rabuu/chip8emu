@@ -230,7 +230,7 @@ impl Chip {
 
         let res = self.v[x as usize] as u16 + self.v[y as usize] as u16;
 
-        self.v[0xf] = if res > 0xff { 1 } else { 0 };
+        self.v[0xf] = u8::from(res > 0xff);
         self.v[x as usize] = (res & 0xff) as u8;
     }
 
@@ -239,12 +239,7 @@ impl Chip {
         let x = ((opcode & 0x0f00) >> 8) as u8;
         let y = ((opcode & 0x00f0) >> 4) as u8;
 
-        self.v[0xf] = if self.v[x as usize] > self.v[y as usize] {
-            1
-        } else {
-            0
-        };
-
+        self.v[0xf] = u8::from(self.v[x as usize] > self.v[y as usize]);
         self.v[x as usize] -= self.v[y as usize];
     }
 
@@ -252,7 +247,7 @@ impl Chip {
     fn shr(&mut self, opcode: u16) {
         let x = ((opcode & 0x0f00) >> 8) as u8;
 
-        self.v[0xf] = if self.v[x as usize] & 1 == 1 { 1 } else { 0 };
+        self.v[0xf] = u8::from(self.v[x as usize] & 1 == 1);
         self.v[x as usize] /= 2;
     }
 
@@ -261,12 +256,7 @@ impl Chip {
         let x = ((opcode & 0x0f00) >> 8) as u8;
         let y = ((opcode & 0x00f0) >> 4) as u8;
 
-        self.v[0xf] = if self.v[y as usize] > self.v[x as usize] {
-            1
-        } else {
-            0
-        };
-
+        self.v[0xf] = u8::from(self.v[y as usize] > self.v[x as usize]);
         self.v[x as usize] = self.v[y as usize] - self.v[x as usize];
     }
 
@@ -274,7 +264,7 @@ impl Chip {
     fn shl(&mut self, opcode: u16) {
         let x = ((opcode & 0x0f00) >> 8) as u8;
 
-        self.v[0xf] = if self.v[x as usize] >> 7 == 1 { 1 } else { 0 };
+        self.v[0xf] = u8::from(self.v[x as usize] >> 7 == 1);
         self.v[x as usize] *= 2;
     }
 
@@ -326,14 +316,10 @@ impl Chip {
         {
             for col in 0..8 {
                 if sprite & 0x80 != 0 {
-                    if self
-                        .renderer
-                        .xor_pixel(self.v[x as usize] + col, self.v[y as usize] + row as u8)
-                    {
-                        self.v[0xf] = 1;
-                    } else {
-                        self.v[0xf] = 0;
-                    }
+                    self.v[0xf] = u8::from(
+                        self.renderer
+                            .xor_pixel(self.v[x as usize] + col, self.v[y as usize] + row as u8),
+                    );
                 }
 
                 sprite <<= 1;

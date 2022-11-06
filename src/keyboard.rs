@@ -2,10 +2,10 @@ use minifb::Key;
 use phf::phf_map;
 
 pub static KEYMAP: phf::Map<u8, u8> = phf_map! {
-    01u8 => 0x1, // 1
-    02u8 => 0x2, // 2
-    03u8 => 0x3, // 3
-    04u8 => 0xc, // 4
+    1u8 => 0x1, // 1
+    2u8 => 0x2, // 2
+    3u8 => 0x3, // 3
+    4u8 => 0xc, // 4
 
     26u8 => 0x4, // Q
     32u8 => 0x5, // W
