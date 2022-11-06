@@ -350,9 +350,31 @@ impl Chip {
     }
 
     /// Set `Vx` = *delay timer* value
-    fn ld_dt(&mut self, opcode: u16) {
+    fn ld_vdt(&mut self, opcode: u16) {
         let x = ((opcode & 0x0f00) >> 8) as u8;
 
         self.v[x as usize] = self.delay_timer;
+    }
+
+    /// Wait for a key press, store the value of the key in `Vx`
+    /// The second part in handled in [Self::handle_input]
+    fn ld_k(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.wait_for_key = Some(x);
+    }
+
+    /// Set *delay timer* = `Vx`
+    fn ld_dtv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.delay_timer = self.v[x as usize];
+    }
+
+    /// Set *sound timer* = `Vx`
+    fn ld_stv(&mut self, opcode: u16) {
+        let x = ((opcode & 0x0f00) >> 8) as u8;
+
+        self.sound_timer = self.v[x as usize];
     }
 }
