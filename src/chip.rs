@@ -312,4 +312,36 @@ impl Chip {
     fn ld_stv(&mut self, x: u8) {
         self.sound_timer = self.v[x as usize];
     }
+
+    /// Set `I` = `I` + `Vx`
+    fn add_i(&mut self, x: u8) {
+        self.i += self.v[x as usize] as u16;
+    }
+
+    /// Set `I` = location of sprite for digit `Vx`
+    fn ld_f(&mut self, x: u8) {
+        self.i = self.v[x as usize] as u16 * 5;
+    }
+
+    /// Store BCD representation of `Vx` in memory location `I`, `I + 1`, and `I + 2`
+    fn ld_b(&mut self, x: u8) {
+        let vx = self.v[x as usize];
+        self.memory[self.i as usize] = vx / 100;
+        self.memory[self.i as usize + 1] = (vx % 100) / 10;
+        self.memory[self.i as usize + 2] = vx % 10;
+    }
+
+    /// Store registers `V0` through `Vx` in memory starting at location `I`
+    fn ld_vstomem(&mut self, x: u8) {
+        for i in 0..=x as usize {
+            self.memory[self.i as usize + i] = self.v[i];
+        }
+    }
+
+    /// Read registers `V0` through `Vx` from memory starting at location `I`
+    fn ld_vsfrommem(&mut self, x: u8) {
+        for i in 0..=x as usize {
+            self.v[i] = self.memory[self.i as usize + i];
+        }
+    }
 }
