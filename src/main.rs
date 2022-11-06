@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use std::path::Path;
+
 use minifb::Key;
 
 use renderer::{Renderer, TimeStep};
@@ -14,6 +16,12 @@ mod sprites;
 
 fn main() {
     let mut chip = Chip::new(10);
+
+    chip.load_sprites();
+    chip.load_rom(Path::new(&format!(
+        "{}/pong.rom",
+        env!("CARGO_MANIFEST_DIR")
+    )));
 
     const HERTZ: f32 = 60.;
     const MS_PER_UPDATE: f32 = (1. / HERTZ) * 1000.;

@@ -99,7 +99,32 @@ impl Chip {
             if self.wait_for_key.is_none() {
                 let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8
                     | self.memory[self.pc as usize + 1] as u16;
-                // TODO: Implement instructions
+
+                let nnn = opcode & 0xfff;
+                let x = ((opcode & 0x0f00) >> 8) as u8;
+                let y = ((opcode & 0x00f0) >> 4) as u8;
+                let kk = (opcode & 0xff) as u8;
+                let n = (opcode & 0xf) as u8;
+
+                match opcode & 0xf000 {
+                    0x0000 => match opcode & 0x0fff {
+                        0x00e0 => self.cls(),
+                        0x00ee => self.ret(),
+                        _ => (), // ignore legacy instruction
+                    },
+                    0x1000 => self.jp(nnn),
+                    0x2000 => self.call(nnn),
+                    0x3000 => self.se_vb(x, kk),
+                    0x4000 => self.sne_vb(x, kk),
+                    0x5000 => match opcode & 0x000f {
+                        0x0000 => self.se_vv(x, y),
+                        unknown => panic!("Unknown instruction with opcode {:x}", unknown),
+                    },
+                    0x6000 => self.ld_vb(x, kk),
+                    0x7000 => self.add_vb(x, kk),
+                    // TODO: match all the other opcodes
+                    unknown => panic!("Unknown instruction with opcode {:x}", unknown),
+                }
             }
         }
 
@@ -130,12 +155,6 @@ impl Chip {
     fn ret(&mut self) {
         self.pc = self.stack.pop().unwrap_or(0);
     }
-
-    // let nnn = opcode & 0xfff;
-    // let x = ((opcode & 0x0f00) >> 8) as u8;
-    // let y = ((opcode & 0x00f0) >> 4) as u8;
-    // let kk = (opcode & 0xff) as u8;
-    // let n = (opcode & 0xf) as u8;
 
     /// Jump to location `nnn`
     fn jp(&mut self, nnn: u16) {
