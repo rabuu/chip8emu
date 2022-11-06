@@ -131,103 +131,76 @@ impl Chip {
         self.pc = self.stack.pop().unwrap_or(0);
     }
 
+    // let nnn = opcode & 0xfff;
+    // let x = ((opcode & 0x0f00) >> 8) as u8;
+    // let y = ((opcode & 0x00f0) >> 4) as u8;
+    // let kk = (opcode & 0xff) as u8;
+    // let n = (opcode & 0xf) as u8;
+
     /// Jump to location `nnn`
-    fn jp(&mut self, opcode: u16) {
-        let nnn = opcode & 0xfff;
+    fn jp(&mut self, nnn: u16) {
         self.pc = nnn;
     }
 
     /// Call subroutine at `nnn`
-    fn call(&mut self, opcode: u16) {
+    fn call(&mut self, nnn: u16) {
         self.stack.push(self.pc);
-
-        let nnn = opcode & 0xfff;
         self.pc = nnn;
     }
 
     /// Skip next instruction if `Vx` == `kk`
-    fn se_vb(&mut self, opcode: u16) {
-        let x = opcode & 0xf;
-        let kk = (opcode & 0xff) as u8;
-
+    fn se_vb(&mut self, x: u8, kk: u8) {
         if self.v[x as usize] == kk {
             self.pc += 2;
         }
     }
 
     /// Skip next instruction if `Vx` != `kk`
-    fn sne_vb(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let kk = (opcode & 0xff) as u8;
-
+    fn sne_vb(&mut self, x: u8, kk: u8) {
         if self.v[x as usize] != kk {
             self.pc += 2;
         }
     }
 
     /// Skip next instruction if `Vx` == `Vy`
-    fn se_vv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn se_vv(&mut self, x: u8, y: u8) {
         if self.v[x as usize] == self.v[y as usize] {
             self.pc += 2;
         }
     }
 
     /// Set `Vx` = `kk`
-    fn ld_vb(&mut self, opcode: u16) {
-        let x = opcode & 0xf;
-        let kk = (opcode & 0xff) as u8;
-
+    fn ld_vb(&mut self, x: u8, kk: u8) {
         self.v[x as usize] = kk;
     }
 
     /// Set `Vx` = `Vx` + `kk`
-    fn add_vb(&mut self, opcode: u16) {
-        let x = opcode & 0xf;
-        let kk = (opcode & 0xff) as u8;
-
+    fn add_vb(&mut self, x: u8, kk: u8) {
         self.v[x as usize] += kk;
     }
 
     /// Set `Vx` = `Vy`
-    fn ld_vv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn ld_vv(&mut self, x: u8, y: u8) {
         self.v[x as usize] = self.v[y as usize];
     }
 
     /// Set `Vx` = `Vx` OR `Vy`
-    fn or(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn or(&mut self, x: u8, y: u8) {
         self.v[x as usize] |= self.v[y as usize];
     }
 
     /// Set `Vx` = `Vx` AND `Vy`
-    fn and(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn and(&mut self, x: u8, y: u8) {
         self.v[x as usize] &= self.v[y as usize];
     }
 
     /// Set `Vx` = `Vx` xor `Vy`
-    fn xor(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn xor(&mut self, x: u8, y: u8) {
         self.v[x as usize] ^= self.v[y as usize];
     }
 
     /// Set `Vx` = `Vx` + `Vy`, set `VF` = carry
-    fn add_vv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn add_vv(&mut self, x: u8, y: u8) {
         let res = self.v[x as usize] as u16 + self.v[y as usize] as u16;
 
         self.v[0xf] = u8::from(res > 0xff);
@@ -235,78 +208,54 @@ impl Chip {
     }
 
     /// Set `Vx` = `Vx - Vy`, set `VF` = NOT borrow
-    fn sub(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn sub(&mut self, x: u8, y: u8) {
         self.v[0xf] = u8::from(self.v[x as usize] > self.v[y as usize]);
         self.v[x as usize] -= self.v[y as usize];
     }
 
     /// Set `Vx` = `Vx` SHR 1
-    fn shr(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn shr(&mut self, x: u8) {
         self.v[0xf] = u8::from(self.v[x as usize] & 1 == 1);
         self.v[x as usize] /= 2;
     }
 
     /// Set `Vx` = `Vy - Vx`, set `VF` = NOT borrow
-    fn subn(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn subn(&mut self, x: u8, y: u8) {
         self.v[0xf] = u8::from(self.v[y as usize] > self.v[x as usize]);
         self.v[x as usize] = self.v[y as usize] - self.v[x as usize];
     }
 
     /// Set `Vx` = `Vx` SHL 1
-    fn shl(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn shl(&mut self, x: u8) {
         self.v[0xf] = u8::from(self.v[x as usize] >> 7 == 1);
         self.v[x as usize] *= 2;
     }
 
     /// Skip next instruction if `Vx` != `Vy`
-    fn sne_vv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-
+    fn sne_vv(&mut self, x: u8, y: u8) {
         if self.v[x as usize] != self.v[y as usize] {
             self.pc += 2;
         }
     }
 
     /// Set `I` = `nnn`
-    fn ld_i(&mut self, opcode: u16) {
-        let nnn = opcode & 0xfff;
-
+    fn ld_i(&mut self, nnn: u16) {
         self.i = nnn;
     }
 
     /// Jump to location `nnn` + `V0`
-    fn jp_v0(&mut self, opcode: u16) {
-        let nnn = opcode & 0xfff;
-
+    fn jp_v0(&mut self, nnn: u16) {
         self.pc = nnn + self.v[0] as u16;
     }
 
     /// Set `Vx` = random byte AND `kk`
-    fn rnd(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let kk = (opcode & 0xff) as u8;
+    fn rnd(&mut self, x: u8, kk: u8) {
         let r: u8 = rand::random();
-
         self.v[x as usize] = r & kk;
     }
 
     /// Display `n`-byte sprite starting at memory location `I` at (`Vx`, `Vy`), set `VF` = collision
-    fn drw(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-        let y = ((opcode & 0x00f0) >> 4) as u8;
-        let n = (opcode & 0xf) as u8;
-
+    fn drw(&mut self, x: u8, y: u8, n: u8) {
         for (row, &(mut sprite)) in self
             .memory
             .iter()
@@ -328,53 +277,39 @@ impl Chip {
     }
 
     /// Skip next instruction if key with the value of `Vx` is pressed
-    fn skp(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn skp(&mut self, x: u8) {
         let key_code = self.v[x as usize];
-
         if self.keyboard.is_key_pressed(key_code) {
             self.pc += 2;
         }
     }
 
     /// Skip next instruction if key with the value of `Vx` is not pressed
-    fn sknp(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn sknp(&mut self, x: u8) {
         let key_code = self.v[x as usize];
-
         if !self.keyboard.is_key_pressed(key_code) {
             self.pc += 2;
         }
     }
 
     /// Set `Vx` = *delay timer* value
-    fn ld_vdt(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn ld_vdt(&mut self, x: u8) {
         self.v[x as usize] = self.delay_timer;
     }
 
     /// Wait for a key press, store the value of the key in `Vx`
     /// The second part in handled in [Self::handle_input]
-    fn ld_k(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn ld_k(&mut self, x: u8) {
         self.wait_for_key = Some(x);
     }
 
     /// Set *delay timer* = `Vx`
-    fn ld_dtv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn ld_dtv(&mut self, x: u8) {
         self.delay_timer = self.v[x as usize];
     }
 
     /// Set *sound timer* = `Vx`
-    fn ld_stv(&mut self, opcode: u16) {
-        let x = ((opcode & 0x0f00) >> 8) as u8;
-
+    fn ld_stv(&mut self, x: u8) {
         self.sound_timer = self.v[x as usize];
     }
 }
