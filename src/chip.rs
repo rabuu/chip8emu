@@ -2,7 +2,12 @@ use std::{fs, path::Path};
 
 use minifb::{Key, KeyRepeat};
 
-use crate::{keyboard::Keyboard, renderer::Renderer, speaker::Speaker, sprites::SPRITES};
+use crate::{
+    keyboard::{self, Keyboard},
+    renderer::Renderer,
+    speaker::Speaker,
+    sprites::SPRITES,
+};
 
 pub struct Chip {
     renderer: Renderer,
@@ -20,7 +25,8 @@ pub struct Chip {
 
     stack: Vec<u16>,
 
-    paused: bool,
+    wait_for_key: Option<u8>, // If waiting, store `Vx`
+
     speed: u32, // how many instructions are evaluated every cycle
 }
 
@@ -37,7 +43,7 @@ impl Chip {
             sound_timer: 0,
             pc: 0x200, // start of most Chip-8 programs
             stack: Vec::new(),
-            paused: false,
+            wait_for_key: None,
             speed,
         }
     }
@@ -55,7 +61,17 @@ impl Chip {
             .window
             .get_keys_pressed(KeyRepeat::No)
             .into_iter()
-            .for_each(|k| self.keyboard.key_pressed(k));
+            .for_each(|k| {
+                if let Some(x) = self.wait_for_key {
+                    if let Some(&key) = keyboard::KEYMAP.get(&(k as u8)) {
+                        self.v[x as usize] = key;
+                        self.wait_for_key = None;
+                    }
+                } else {
+                    self.keyboard.key_pressed(k)
+                }
+            });
+
         self.renderer
             .window
             .get_keys_released()
@@ -80,7 +96,7 @@ impl Chip {
     pub fn cycle(&mut self) {
         // execute instructions
         for _ in 0..self.speed {
-            if !self.paused {
+            if self.wait_for_key.is_none() {
                 let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8
                     | self.memory[self.pc as usize + 1] as u16;
                 // TODO: Implement instructions
@@ -88,7 +104,7 @@ impl Chip {
         }
 
         // update timers
-        if !self.paused {
+        if self.wait_for_key.is_none() {
             if self.delay_timer > 0 {
                 self.delay_timer -= 1;
             }

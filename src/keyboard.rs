@@ -1,7 +1,7 @@
 use minifb::Key;
 use phf::phf_map;
 
-static KEYMAP: phf::Map<u8, u8> = phf_map! {
+pub static KEYMAP: phf::Map<u8, u8> = phf_map! {
     01u8 => 0x1, // 1
     02u8 => 0x2, // 2
     03u8 => 0x3, // 3
@@ -44,8 +44,6 @@ impl Keyboard {
         };
 
         self.keys_pressed[key_code as usize] = true;
-
-        // TODO: next key press stuff missing
     }
 
     pub fn key_released(&mut self, key: Key) {
