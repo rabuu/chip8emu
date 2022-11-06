@@ -67,9 +67,9 @@ impl Chip {
                         self.v[x as usize] = key;
                         self.wait_for_key = None;
                     }
-                } else {
-                    self.keyboard.key_pressed(k)
                 }
+
+                self.keyboard.key_pressed(k);
             });
 
         self.renderer
