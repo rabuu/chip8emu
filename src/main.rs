@@ -24,6 +24,8 @@ fn main() {
     while chip.is_running() {
         dt += timestep.delta();
 
+        chip.handle_input();
+
         while dt >= MS_PER_UPDATE {
             // CPU CYCLE
             chip.cycle();

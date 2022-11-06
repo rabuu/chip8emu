@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use minifb::Key;
+use minifb::{Key, KeyRepeat};
 
 use crate::{keyboard::Keyboard, renderer::Renderer, speaker::Speaker, sprites::SPRITES};
 
@@ -48,6 +48,19 @@ impl Chip {
 
     pub fn update(&mut self) {
         self.renderer.window.update();
+    }
+
+    pub fn handle_input(&mut self) {
+        self.renderer
+            .window
+            .get_keys_pressed(KeyRepeat::No)
+            .into_iter()
+            .for_each(|k| self.keyboard.key_pressed(k));
+        self.renderer
+            .window
+            .get_keys_released()
+            .into_iter()
+            .for_each(|k| self.keyboard.key_released(k));
     }
 
     pub fn load_sprites(&mut self) {

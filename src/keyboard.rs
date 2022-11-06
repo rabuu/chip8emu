@@ -38,7 +38,7 @@ impl Keyboard {
         self.keys_pressed[key_code as usize]
     }
 
-    pub fn on_key_down(&mut self, key: Key) {
+    pub fn key_pressed(&mut self, key: Key) {
         let Some(&key_code) = KEYMAP.get(&(key as u8)) else {
             return;
         };
@@ -48,8 +48,11 @@ impl Keyboard {
         // TODO: next key press stuff missing
     }
 
-    pub fn on_key_up(&mut self, key: Key) {
-        let key_code = KEYMAP[&(key as u8)];
+    pub fn key_released(&mut self, key: Key) {
+        let Some(&key_code) = KEYMAP.get(&(key as u8)) else {
+            return;
+        };
+
         self.keys_pressed[key_code as usize] = false;
     }
 }
