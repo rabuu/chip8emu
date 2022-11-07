@@ -234,7 +234,7 @@ impl Chip {
 
     /// Set `Vx` = `Vx` SHR 1
     fn shr(&mut self, x: u8) {
-        self.v[0xf] = u8::from(self.v[x as usize] & 1 == 1);
+        self.v[0xf] = self.v[x as usize] & 1;
         self.v[x as usize] /= 2;
     }
 
