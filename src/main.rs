@@ -4,9 +4,8 @@ use std::path::Path;
 
 use minifb::Key;
 
+use chip::Chip;
 use renderer::{Renderer, TimeStep};
-
-use crate::chip::Chip;
 
 mod chip;
 mod keyboard;
@@ -35,9 +34,7 @@ fn main() {
         chip.handle_input();
 
         while dt >= MS_PER_UPDATE {
-            // CPU CYCLE
             chip.cycle();
-
             dt -= MS_PER_UPDATE;
         }
 
