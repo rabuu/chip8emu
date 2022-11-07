@@ -5,8 +5,8 @@ use minifb::{Window, WindowOptions};
 const ROWS: u8 = 32;
 const COLS: u8 = 64;
 
-const ON: u32 = 0x000000;
-const OFF: u32 = 0xFFFFFF;
+const OFF: u32 = 0x000000;
+const ON: u32 = 0xFFFFFF;
 
 pub struct Renderer {
     scale: usize,
@@ -34,10 +34,10 @@ impl Renderer {
     }
 
     pub fn xor_pixel(&mut self, x: u8, y: u8) -> bool {
-        let px = (y % ROWS) * COLS + (x % COLS);
-        self.display[px as usize] ^= true;
+        let px = (y as usize % ROWS as usize) * COLS as usize + (x as usize % COLS as usize);
+        self.display[px] ^= true;
 
-        !self.display[px as usize]
+        !self.display[px]
     }
 
     pub fn clear(&mut self) {

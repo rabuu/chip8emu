@@ -99,6 +99,7 @@ impl Chip {
             if self.wait_for_key.is_none() {
                 let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8
                     | self.memory[self.pc as usize + 1] as u16;
+
                 // increment program counter
                 self.pc += 2;
 
@@ -182,6 +183,9 @@ impl Chip {
         } else {
             self.speaker.stop();
         }
+
+        // render display
+        self.renderer.render();
     }
 
     /// Clear the display
@@ -233,7 +237,7 @@ impl Chip {
 
     /// Set `Vx` = `Vx` + `kk`
     fn add_vb(&mut self, x: u8, kk: u8) {
-        self.v[x as usize] += kk;
+        self.v[x as usize] = self.v[x as usize].wrapping_add(kk);
     }
 
     /// Set `Vx` = `Vy`
@@ -267,7 +271,7 @@ impl Chip {
     /// Set `Vx` = `Vx - Vy`, set `VF` = NOT borrow
     fn sub(&mut self, x: u8, y: u8) {
         self.v[0xf] = u8::from(self.v[x as usize] > self.v[y as usize]);
-        self.v[x as usize] -= self.v[y as usize];
+        self.v[x as usize] = self.v[x as usize].wrapping_sub(self.v[y as usize]);
     }
 
     /// Set `Vx` = `Vx` SHR 1
@@ -279,7 +283,7 @@ impl Chip {
     /// Set `Vx` = `Vy - Vx`, set `VF` = NOT borrow
     fn subn(&mut self, x: u8, y: u8) {
         self.v[0xf] = u8::from(self.v[y as usize] > self.v[x as usize]);
-        self.v[x as usize] = self.v[y as usize] - self.v[x as usize];
+        self.v[x as usize] = self.v[y as usize].wrapping_sub(self.v[x as usize]);
     }
 
     /// Set `Vx` = `Vx` SHL 1
@@ -316,7 +320,7 @@ impl Chip {
         for (row, &(mut sprite)) in self
             .memory
             .iter()
-            .skip(self.i as usize - 1)
+            .skip(self.i as usize)
             .take(n as usize)
             .enumerate()
         {
