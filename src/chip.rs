@@ -99,6 +99,8 @@ impl Chip {
             if self.wait_for_key.is_none() {
                 let opcode: u16 = (self.memory[self.pc as usize] as u16) << 8
                     | self.memory[self.pc as usize + 1] as u16;
+                // increment program counter
+                self.pc += 2;
 
                 let nnn = opcode & 0xfff;
                 let x = ((opcode & 0x0f00) >> 8) as u8;
